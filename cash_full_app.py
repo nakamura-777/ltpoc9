@@ -116,6 +116,10 @@ def estimate_shortage_month(results):
     return shortage_month
 
 
+
+# 各月のデータを処理
+metrics = calculate_metrics(monthly_data)
+
 # アプリ内でショート時期をチェックしてアラートを表示
 shortage_month = estimate_shortage_month(metrics)
 if shortage_month:
