@@ -121,6 +121,49 @@ def estimate_shortage_month(results):
 metrics = calculate_metrics(monthly_data)
 
 # アプリ内でショート時期をチェックしてアラートを表示
+
+def estimate_precise_shortage_month(results, starting_cash):
+    current_cash = starting_cash
+    for i, res in enumerate(results):
+        cash_change = res["現金増減"]
+        next_cash = current_cash + cash_change
+        if next_cash < 0:
+            if cash_change == 0:
+                return res["月"]
+            # 線形補完：残高0になる割合を算出
+            ratio = current_cash / abs(cash_change)
+            return f"{res['月']}の{ratio*100:.1f}%時点"
+        current_cash = next_cash
+    return None
+
+def simulate_sensitivity(results, starting_cash, tp_lt_ratio_range):
+    scenarios = []
+    for ratio in tp_lt_ratio_range:
+        current_cash = starting_cash
+        shortage_month = None
+        for res in results:
+            simulated_cash_change = res["現金増減"] * (1 + ratio)
+            current_cash += simulated_cash_change
+            if current_cash < 0 and shortage_month is None:
+                shortage_month = res["月"]
+        scenarios.append({
+            "改善率": f"{int(ratio*100)}%",
+            "資金ショート月": shortage_month if shortage_month else "ショートなし"
+        })
+    return scenarios
+
+precise_shortage = estimate_precise_shortage_month(metrics, starting_cash)
+st.subheader("📉 資金ショート予測（精密版）")
+if precise_shortage:
+    st.error(f"⚠️ 現金残高がマイナスになるタイミングは「{precise_shortage}」と予測されます。")
+else:
+    st.success("✅ 現在の現金残高と収支では、12ヶ月間資金ショートの心配はありません。")
+
+st.subheader("🔍 感度分析（TP/LT改善 vs 資金ショート月）")
+ratios = [r/100 for r in range(-100, 101, 25)]  # -100% ~ +100%まで25%刻み
+sensitivity_results = simulate_sensitivity(metrics, starting_cash, ratios)
+st.dataframe(sensitivity_results)
+
 shortage_month = estimate_shortage_month(metrics)
 if shortage_month:
     st.error(f"⚠️ 資金ショート（倒産リスク）は {shortage_month} に予測されます。至急の対応が必要です。")
