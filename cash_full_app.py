@@ -73,7 +73,11 @@ for i, val in enumerate(future_balance):
 
 # メッセージ＆イラスト表示
 def show_image_and_message(image_file, message, color="info"):
-    st.image(f"images/{image_file}", width=120)
+    
+image_path = os.path.join("images", image_file)
+if os.path.exists(image_path):
+    st.image(image_path, width=120)
+
     getattr(st, color)(message)
 
 if zero_month is not None:
