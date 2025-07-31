@@ -96,3 +96,29 @@ else:
 st.subheader("データ出力")
 st.dataframe(df)
 st.download_button("📥 CSVとしてダウンロード", df.to_csv(index=False), file_name="cash_flow_analysis.csv")
+
+
+
+def estimate_shortage_month(results):
+    balances = []
+    current_cash = None
+    for res in results:
+        cash_end = res["現金増減"]
+        balances.append(cash_end)
+
+    total_cash = 0
+    shortage_month = None
+    for i, res in enumerate(results):
+        total_cash += res["現金増減"]
+        if total_cash < 0:
+            shortage_month = res["月"]
+            break
+    return shortage_month
+
+
+# アプリ内でショート時期をチェックしてアラートを表示
+shortage_month = estimate_shortage_month(metrics)
+if shortage_month:
+    st.error(f"⚠️ 資金ショート（倒産リスク）は {shortage_month} に予測されます。至急の対応が必要です。")
+else:
+    st.success("✅ 現在の収支ペースでは、資金ショートの心配はありません。")
